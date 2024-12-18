@@ -24,14 +24,15 @@ public class TrinketsServiceImpl implements TrinketsService {
     @Override
     public ResponseEntity<?> generateTrinketsByCost(int cost) {
         ArrayList<Trinkets> trinkets = trinketsRepository.findAllByCost(cost);
-        if (!trinkets.isEmpty() && trinkets.size() > 1) {
+        if (trinkets.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Безделушки с ценой " + cost + " не найдены");
+        } else if (trinkets.size() == 1) {
+            return ResponseEntity.status(HttpStatus.OK).body(trinkets.get(0));
+        }
+        else {
             Random random = new Random();
             random.setSeed(System.currentTimeMillis());
             return ResponseEntity.status(HttpStatus.OK).body(trinkets.get(random.nextInt(1, trinkets.size())));
-        } else if (trinkets.size() == 1) {
-            return ResponseEntity.status(HttpStatus.OK).body(trinkets.get(0));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Безделушки с ценой " + cost + " не найдены");
         }
     }
 
@@ -48,13 +49,17 @@ public class TrinketsServiceImpl implements TrinketsService {
 
     @Override
     public ResponseEntity<?> addTrinket(TrinketDto trinketDto) {
-        Trinkets trinkets = new Trinkets();
-        trinkets.setId(ObjectId.get());
-        trinkets.setCost(trinketDto.getCost());
-        trinkets.setName(trinketDto.getName());
-        trinkets.setDescription(trinketDto.getDescription());
-        trinkets.setCurrency(trinketDto.getCurrency());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(trinketsRepository.insert(trinkets));
+        if (trinketDto == null || trinketDto.getCost() < 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Неккоректное DTO");
+        }
+        else {
+            Trinkets trinkets = new Trinkets();
+            trinkets.setId(ObjectId.get());
+            trinkets.setCost(trinketDto.getCost());
+            trinkets.setName(trinketDto.getName());
+            trinkets.setDescription(trinketDto.getDescription());
+            trinkets.setCurrency(trinketDto.getCurrency());
+            return ResponseEntity.status(HttpStatus.CREATED).body(trinketsRepository.insert(trinkets));
+        }
     }
 }
